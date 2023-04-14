@@ -1,6 +1,6 @@
 const express = require("express");
 
-// const ctrl = require("../../controllers/auth-controllers")
+const ctrl = require("../../controllers/auth-controllers");
 
 const {validateBody} = require("../../utils");
 
@@ -9,6 +9,6 @@ const {validateBody} = require("../../utils");
 const router = express.Router();
 
 // singUp
-router.post("/register", validateBody(schemas.registerSchema))
+router.post("/register", validateBody(schemas.registerSchema), ctrl.register);
 
 module.exports = router;
