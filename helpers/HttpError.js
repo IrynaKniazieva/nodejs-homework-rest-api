@@ -7,7 +7,7 @@ class HttpError extends Error {
 
 const errorMessages = {
   400: "Bad Request",
-  401: "Unauthorized",
+  401: "Not authorized",
   403: "Forbidden",
   404: "Not Found",
   409: "Conflict",
