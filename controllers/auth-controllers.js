@@ -3,7 +3,7 @@ const jwt = require("jsonwebtoken");
 const gravatar = require("gravatar");
 const fs = require("fs/promises");
 const path = require("path");
-
+const jimp = require("jimp");
 
 const { ctrlWrapper } = require("../utils");
 
@@ -14,7 +14,7 @@ const { date } = require("joi");
 
 const { SECRET_KEY } = process.env;
 
-const avatarsDir = path.join(__dirname, "../", "public", "avatars")
+const avatarsDir = path.join(__dirname, "../", "public", "avatars");
 
 const register = async (req, res) => {
   const { email, password } = req.body;
@@ -25,7 +25,11 @@ const register = async (req, res) => {
 
   const hashPassword = await bcrypt.hash(password, 10);
   const avatarURL = gravatar.url(email);
-  const result = await User.create({ ...req.body, password: hashPassword, avatarURL });
+  const result = await User.create({
+    ...req.body,
+    password: hashPassword,
+    avatarURL,
+  });
 
   res.status(201).json({
     email: result.email,
@@ -75,22 +79,27 @@ const logout = async (req, res) => {
   res.sendStatus(204).end();
 };
 
-const updateAvatar = async(req, res) => {
-    const {_id} = req.user;
-    const {path: tempUpload, filename} = req.file;
-    const avatarName = `${_id}_${filename}`;
-    const resultUpload = path.join(avatarsDir, avatarName);
-    await fs.rename(tempUpload, resultUpload);
-    const avatarURL = path.join("avatars", avatarName);
-    await User.findByIdAndUpdate(_id, {avatarURL});
+const updateAvatar = async (req, res) => {
+  const { _id } = req.user;
+  const { path: tempUpload, filename } = req.file;
+  const avatarName = `${_id}_${filename}`;
+  const resultUpload = path.join(avatarsDir, avatarName);
 
-    res.json({avatarURL})
-}
+  const image = await jimp.read(tempUpload);
+  await image.resize(250, jimp.AUTO);
+  await image.writeAsync(tempUpload);
+
+  await fs.rename(tempUpload, resultUpload);
+  const avatarURL = path.join("avatars", avatarName);
+  await User.findByIdAndUpdate(_id, { avatarURL });
+
+  res.json({ avatarURL });
+};
 
 module.exports = {
   register: ctrlWrapper(register),
   login: ctrlWrapper(login),
   getCurrent: ctrlWrapper(getCurrent),
   logout: ctrlWrapper(logout),
-  updateAvatar: ctrlWrapper(updateAvatar)
+  updateAvatar: ctrlWrapper(updateAvatar),
 };
